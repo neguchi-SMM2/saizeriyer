@@ -43,31 +43,35 @@
             menuData = data;
         });
 
-        // 組み合わせ生成
         document.getElementById('generate').addEventListener('click', function () {
         const price = parseInt(document.getElementById('price').value, 10);
         const alcohol = document.getElementById('alcohol').checked;
         const duplicate = document.getElementById('duplicate').checked;
         const lunch = document.getElementById('lunch').checked;
 
-        // 条件フィルタ
+        // 条件でフィルタ
         let filtered = menuData.filter(item => {
             if (!alcohol && item.type === "alcohol") return false;
             if (!lunch && item.type === "lunch") return false;
-            if (item.type === "lunch" && lunch) return true;
-            return item.type === "normal" || item.type === "alcohol" || item.type === "lunch";
+            return true;
         });
 
-        let results = [];
+        let candidates = [];
 
         function dfs(start, combo, total) {
             if (total > price) return;
-            if (total <= price && combo.length > 0) {
-            results.push({ items: [...combo], total });
+
+            // ✅ 条件: 予算-100 < total <= 予算
+            if (total > price - 100 && total <= price && combo.length > 0) {
+            candidates.push({ items: [...combo], total });
             }
 
             for (let i = start; i < filtered.length; i++) {
             const item = filtered[i];
+
+            // ランチは1品まで
+            if (item.type === "lunch" && combo.some(c => c.type === "lunch")) continue;
+
             combo.push(item);
             dfs(duplicate ? i : i + 1, combo, total + item.price);
             combo.pop();
@@ -76,26 +80,17 @@
 
         dfs(0, [], 0);
 
-        // 重複結果削除
-        let seen = new Set();
-        results = results.filter(r => {
-            const key = r.items.map(i => i.id).sort().join("-");
-            if (seen.has(key)) return false;
-            seen.add(key);
-            return true;
-        });
-
-        // 表示
+        // ランダムに1件選ぶ
         const resultDiv = document.getElementById('result');
         resultDiv.innerHTML = "";
-        if (results.length === 0) {
+
+        if (candidates.length === 0) {
             resultDiv.textContent = "条件に合う組み合わせはありません。";
         } else {
-            results.forEach(r => {
+            const choice = candidates[Math.floor(Math.random() * candidates.length)];
             const p = document.createElement("p");
-            p.textContent = r.items.map(i => i.name).join(" + ") + " = " + r.total + "円";
+            p.textContent = choice.items.map(i => i.name).join(" + ") + " = " + choice.total + "円";
             resultDiv.appendChild(p);
-            });
         }
         });
         </script>
