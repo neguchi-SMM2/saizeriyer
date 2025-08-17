@@ -717,6 +717,7 @@
         "id": "",
         "name": "ペンネ変更",
         "price": 30,
-        "type": "normal"
+        "type": "normal",
+        "special": "penne"
     }
 ]
