@@ -53,29 +53,24 @@
         resultDiv.innerHTML = "<p>生成中...</p>";
 
         setTimeout(() => {
-            // 条件でフィルタ
             let filtered = menuData.filter(item => {
             if (!alcohol && item.type === "alcohol") return false;
             if (!lunch && item.type === "lunch") return false;
             return true;
             });
 
-            const MAX_ITEMS = 15;   // 最大15品
-            const MAX_TRY = 10000;  // ランダム試行回数
+            const MAX_ITEMS = 10;
+            const MAX_TRY = 10000;
 
             function getRandomCombo() {
             let combo = [];
             let total = 0;
-
-            // 1〜MAX_ITEMS品までランダムに選ぶ
             let count = Math.floor(Math.random() * MAX_ITEMS) + 1;
 
             for (let j = 0; j < count; j++) {
                 const item = filtered[Math.floor(Math.random() * filtered.length)];
-                // ランチは1品まで
                 if (item.type === "lunch" && combo.some(c => c.type === "lunch")) continue;
                 if (!duplicate && combo.includes(item)) continue;
-
                 if (total + item.price > price) continue;
 
                 combo.push(item);
@@ -89,48 +84,62 @@
 
             for (let t = 0; t < MAX_TRY; t++) {
             const { combo, total } = getRandomCombo();
-
             if (combo.length === 0) continue;
 
-            // ✅ 条件: 予算-100 < total <= 予算
             if (total > price - 100 && total <= price) {
                 found = { combo, total };
-                break; // 見つけたら即終了
+                break;
             }
 
-            // 代替候補（最も予算に近いもの）
             if (!best || Math.abs(price - total) < Math.abs(price - best.total)) {
                 best = { combo, total };
             }
             }
 
             resultDiv.innerHTML = "";
+            let target = found || best;
 
-            if (found) {
-            found.combo.forEach(i => {
-                const p = document.createElement("p");
-                p.textContent = `${i.id} - ${i.name}`;
-                resultDiv.appendChild(p);
-            });
-            const totalP = document.createElement("p");
-            totalP.textContent = `合計：${found.total}円`;
-            resultDiv.appendChild(totalP);
-            } else if (best) {
+            if (!target) {
+            resultDiv.textContent = "組み合わせが見つかりませんでした。";
+            return;
+            }
+
+            if (!found) {
             const warn = document.createElement("p");
             warn.textContent = "条件に合う組み合わせは見つかりませんでしたが、近い金額を表示します。";
             resultDiv.appendChild(warn);
-
-            best.combo.forEach(i => {
-                const p = document.createElement("p");
-                p.textContent = `${i.id} - ${i.name}`;
-                resultDiv.appendChild(p);
-            });
-            const totalP = document.createElement("p");
-            totalP.textContent = `合計：${best.total}円`;
-            resultDiv.appendChild(totalP);
-            } else {
-            resultDiv.textContent = "組み合わせが見つかりませんでした。";
             }
+
+            // 🔹 集計（同じ商品まとめ）
+            let summary = {};
+            target.combo.forEach(i => {
+            if (!summary[i.id]) {
+                summary[i.id] = { ...i, count: 0 };
+            }
+            summary[i.id].count++;
+            });
+
+            // 🔹 商品名の最大幅を算出
+            const nameWidth = Math.max(...Object.values(summary).map(i => i.name.length));
+
+            // 🔹 表示整形
+            const lines = [];
+            for (let id in summary) {
+            const item = summary[id];
+            const subtotal = item.price * item.count;
+            lines.push(
+                `${item.id.toString().padEnd(6)} - ${item.name.padEnd(nameWidth)}  ${item.count
+                .toString()
+                .padStart(2)}  ${subtotal.toString().padStart(5)}円`
+            );
+            }
+
+            lines.push(`合計 : ${target.total}円`);
+
+            const pre = document.createElement("pre");
+            pre.style.fontFamily = "monospace";
+            pre.textContent = lines.join("\n");
+            resultDiv.appendChild(pre);
         }, 50);
         });
         </script>
