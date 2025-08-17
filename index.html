@@ -119,27 +119,46 @@
             summary[i.id].count++;
             });
 
-            // 🔹 商品名の最大幅を算出
-            const nameWidth = Math.max(...Object.values(summary).map(i => i.name.length));
+            // 🔹 表形式で表示
+            const table = document.createElement("div");
+            table.className = "menu-table";
 
-            // 🔹 表示整形
-            const lines = [];
-            for (let id in summary) {
-            const item = summary[id];
+            Object.values(summary).forEach(item => {
             const subtotal = item.price * item.count;
-            lines.push(
-                `${item.id.toString().padEnd(6)} - ${item.name.padEnd(nameWidth)}  ${item.count
-                .toString()
-                .padStart(2)}  ${subtotal.toString().padStart(5)}円`
-            );
-            }
 
-            lines.push(`合計 : ${target.total}円`);
+            const row = document.createElement("div");
+            row.className = "menu-row";
 
-            const pre = document.createElement("pre");
-            pre.style.fontFamily = "monospace";
-            pre.textContent = lines.join("\n");
-            resultDiv.appendChild(pre);
+            const idCell = document.createElement("div");
+            idCell.className = "menu-cell";
+            idCell.textContent = item.id;
+
+            const nameCell = document.createElement("div");
+            nameCell.className = "menu-cell name";
+            nameCell.textContent = item.name;
+
+            const countCell = document.createElement("div");
+            countCell.className = "menu-cell";
+            countCell.textContent = item.count;
+
+            const priceCell = document.createElement("div");
+            priceCell.className = "menu-cell";
+            priceCell.textContent = subtotal + "円";
+
+            row.appendChild(idCell);
+            row.appendChild(nameCell);
+            row.appendChild(countCell);
+            row.appendChild(priceCell);
+
+            table.appendChild(row);
+            });
+
+            resultDiv.appendChild(table);
+
+            const totalP = document.createElement("div");
+            totalP.className = "menu-total";
+            totalP.textContent = `合計 : ${target.total}円`;
+            resultDiv.appendChild(totalP);
         }, 50);
         });
         </script>
