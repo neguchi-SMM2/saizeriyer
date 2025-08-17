@@ -50,7 +50,7 @@
         const lunch = document.getElementById('lunch').checked;
 
         const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = "<p>生成中...</p>"; // 🔹 一時表示
+        resultDiv.innerHTML = "<p>生成中...</p>";
 
         setTimeout(() => {
             // 条件でフィルタ
@@ -60,48 +60,78 @@
             return true;
             });
 
-            let candidates = [];
+            const MAX_ITEMS = 15;   // 最大15品
+            const MAX_TRY = 10000;  // ランダム試行回数
 
-            function dfs(start, combo, total) {
-            if (total > price) return;
+            function getRandomCombo() {
+            let combo = [];
+            let total = 0;
 
-            // ✅ 条件: 予算-100 < total <= 予算
-            if (total > price - 100 && total <= price && combo.length > 0) {
-                candidates.push({ items: [...combo], total });
-            }
+            // 1〜MAX_ITEMS品までランダムに選ぶ
+            let count = Math.floor(Math.random() * MAX_ITEMS) + 1;
 
-            for (let i = start; i < filtered.length; i++) {
-                const item = filtered[i];
-
+            for (let j = 0; j < count; j++) {
+                const item = filtered[Math.floor(Math.random() * filtered.length)];
                 // ランチは1品まで
                 if (item.type === "lunch" && combo.some(c => c.type === "lunch")) continue;
+                if (!duplicate && combo.includes(item)) continue;
+
+                if (total + item.price > price) continue;
 
                 combo.push(item);
-                dfs(duplicate ? i : i + 1, combo, total + item.price);
-                combo.pop();
+                total += item.price;
+            }
+            return { combo, total };
+            }
+
+            let found = null;
+            let best = null;
+
+            for (let t = 0; t < MAX_TRY; t++) {
+            const { combo, total } = getRandomCombo();
+
+            if (combo.length === 0) continue;
+
+            // ✅ 条件: 予算-100 < total <= 予算
+            if (total > price - 100 && total <= price) {
+                found = { combo, total };
+                break; // 見つけたら即終了
+            }
+
+            // 代替候補（最も予算に近いもの）
+            if (!best || Math.abs(price - total) < Math.abs(price - best.total)) {
+                best = { combo, total };
             }
             }
 
-            dfs(0, [], 0);
-
-            // 結果表示
             resultDiv.innerHTML = "";
-            if (candidates.length === 0) {
-            resultDiv.textContent = "条件に合う組み合わせはありません。";
-            } else {
-            const choice = candidates[Math.floor(Math.random() * candidates.length)];
 
-            choice.items.forEach(i => {
+            if (found) {
+            found.combo.forEach(i => {
                 const p = document.createElement("p");
                 p.textContent = `${i.id} - ${i.name}`;
                 resultDiv.appendChild(p);
             });
-
             const totalP = document.createElement("p");
-            totalP.textContent = `合計：${choice.total}円`;
+            totalP.textContent = `合計：${found.total}円`;
             resultDiv.appendChild(totalP);
+            } else if (best) {
+            const warn = document.createElement("p");
+            warn.textContent = "条件に合う組み合わせは見つかりませんでしたが、近い金額を表示します。";
+            resultDiv.appendChild(warn);
+
+            best.combo.forEach(i => {
+                const p = document.createElement("p");
+                p.textContent = `${i.id} - ${i.name}`;
+                resultDiv.appendChild(p);
+            });
+            const totalP = document.createElement("p");
+            totalP.textContent = `合計：${best.total}円`;
+            resultDiv.appendChild(totalP);
+            } else {
+            resultDiv.textContent = "組み合わせが見つかりませんでした。";
             }
-        }, 50); // 🔹 少し遅延させて「生成中...」が見えるようにする
+        }, 50);
         });
         </script>
     </body>
