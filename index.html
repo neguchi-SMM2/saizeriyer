@@ -214,34 +214,87 @@
         }
 
         function convertDrinkBars(summary) {
+            // フードアイテムの数をカウント（ID範囲: 1100-4399）
             const foodCount = Object.values(summary).reduce((acc, i) => {
-            if (typeof i.id === "number" && i.id >= 1100 && i.id <= 4399) {
-                return acc + i.count;
-            }
-            return acc;
+                // id が数値の場合のみチェック（空文字列やnoneは除外）
+                if (typeof i.id === "number" && i.id >= 1100 && i.id <= 4399) {
+                    return acc + i.count;
+                }
+                return acc;
             }, 0);
 
-            let single = summary["5103単品ドリンクバー"]?.count || 0;
-
-            if (single > 0) {
-            let toConvert = Math.min(foodCount, single);
-
-            if (toConvert > 0) {
-                if (!summary["5101セットドリンクバー"]) {
-                summary["5101セットドリンクバー"] = {
-                    id: 5101,
-                    name: "セットドリンクバー",
-                    price: 200,
-                    count: 0,
-                };
-                }
-                summary["5101セットドリンクバー"].count += toConvert;
-                summary["5103単品ドリンクバー"].count -= toConvert;
-                if (summary["5103単品ドリンクバー"].count <= 0) {
-                delete summary["5103単品ドリンクバー"];
+            // 単品ドリンクバーとセットドリンクバーのキーを動的に探す
+            let singleDrinkKey = null;
+            let singleDrinkCount = 0;
+            let setDrinkKey = null;
+            let setDrinkCount = 0;
+            
+            for (const [key, item] of Object.entries(summary)) {
+                if (item.id === 5103 && item.name === "単品ドリンクバー") {
+                    singleDrinkKey = key;
+                    singleDrinkCount = item.count;
+                } else if (item.id === 5101 && item.name === "セットドリンクバー") {
+                    setDrinkKey = key;
+                    setDrinkCount = item.count;
                 }
             }
+
+            // 1. まず単品→セットへの変換（フードがある場合）
+            if (singleDrinkCount > 0 && foodCount > 0) {
+                let canConvertToSet = Math.min(foodCount - setDrinkCount, singleDrinkCount);
+                
+                if (canConvertToSet > 0) {
+                    // セットドリンクバーが存在しない場合は新規作成
+                    if (!setDrinkKey) {
+                        setDrinkKey = "5101セットドリンクバー";
+                        summary[setDrinkKey] = {
+                            id: 5101,
+                            name: "セットドリンクバー",
+                            price: 200,
+                            count: setDrinkCount,
+                        };
+                    }
+                    
+                    // 単品からセットに変換
+                    summary[setDrinkKey].count += canConvertToSet;
+                    summary[singleDrinkKey].count -= canConvertToSet;
+                    setDrinkCount += canConvertToSet;
+                    singleDrinkCount -= canConvertToSet;
+                    
+                    // 単品ドリンクバーが0になったら削除
+                    if (summary[singleDrinkKey].count <= 0) {
+                        delete summary[singleDrinkKey];
+                        singleDrinkKey = null;
+                        singleDrinkCount = 0;
+                    }
+                }
             }
+
+            // 2. セット→単品への変換（セットがフード数を超えている場合）
+            if (setDrinkCount > foodCount && setDrinkCount > 0) {
+                let excessSet = setDrinkCount - foodCount;
+                
+                // 単品ドリンクバーが存在しない場合は新規作成
+                if (!singleDrinkKey) {
+                    singleDrinkKey = "5103単品ドリンクバー";
+                    summary[singleDrinkKey] = {
+                        id: 5103,
+                        name: "単品ドリンクバー",
+                        price: 300,
+                        count: 0,
+                    };
+                }
+                
+                // セットから単品に変換
+                summary[singleDrinkKey].count += excessSet;
+                summary[setDrinkKey].count -= excessSet;
+                
+                // セットドリンクバーが0になったら削除
+                if (summary[setDrinkKey].count <= 0) {
+                    delete summary[setDrinkKey];
+                }
+            }
+            
             return summary;
         }
 
