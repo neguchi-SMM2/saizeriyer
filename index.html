@@ -9,7 +9,7 @@
     </head>
     <body>
         <h1>サイゼメニュー組み合わせ生成機</h1>
-        <p class="info">指定された条件を満たすメニューの組み合わせを生成します。</p>
+        <p class="info">指定された条件を満たすメニューの組み合わせを生成します。すべて税込価格です。</p>
         <fieldset>
             <legend>条件</legend>
             <div>
@@ -164,7 +164,7 @@
 
             const idCell = document.createElement("div");
             idCell.className = "menu-cell";
-            idCell.textContent = item.id === "none" ? "" : item.id;
+            idCell.textContent = item.id === "none" || item.id === "" ? "" : item.id;
 
             const nameCell = document.createElement("div");
             nameCell.className = "menu-cell name";
@@ -246,24 +246,56 @@
         }
 
         function applyPenneLimit(summary) {
-            let penne = summary["noneペンネ変更"];
+            // ペンネ変更の正しいキーを探す（idが空文字列の場合）
+            let penneKey = null;
+            let penne = null;
+            
+            // 可能性のあるキーを試す
+            const possibleKeys = ["ペンネ変更", "noneペンネ変更", "ペンネ変更"];
+            
+            for (const key of possibleKeys) {
+                if (summary[key]) {
+                    penneKey = key;
+                    penne = summary[key];
+                    break;
+                }
+            }
+            
+            // キーが見つからない場合、空文字列のidを持つペンネ変更を探す
+            if (!penne) {
+                for (const [key, item] of Object.entries(summary)) {
+                    if (item.name === "ペンネ変更" && (item.id === "" || item.id === "none")) {
+                        penneKey = key;
+                        penne = item;
+                        break;
+                    }
+                }
+            }
+            
             if (!penne) return summary;
 
+            // パスタの数をカウント（ID 2300-2399、但し2325は除く）
             let pastaCount = Object.values(summary).reduce((acc, i) => {
-            if (
-                typeof i.id === "number" &&
-                i.id >= 2300 &&
-                i.id < 2400 &&
-                i.id != 2325
-            ) {
-                return acc + i.count;
-            }
-            return acc;
+                if (
+                    typeof i.id === "number" &&
+                    i.id >= 2300 &&
+                    i.id < 2400 &&
+                    i.id !== 2325
+                ) {
+                    return acc + i.count;
+                }
+                return acc;
             }, 0);
 
+            // ペンネ変更の数をパスタの数に制限
             if (penne.count > pastaCount) {
-            penne.count = pastaCount;
+                penne.count = pastaCount;
+                // 0になった場合は削除
+                if (penne.count <= 0) {
+                    delete summary[penneKey];
+                }
             }
+            
             return summary;
         }
         });
