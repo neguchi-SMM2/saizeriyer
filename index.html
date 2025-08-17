@@ -28,6 +28,10 @@
                 <input type="checkbox" id="lunch" name="lunch" />
                 <label for="lunch">ランチメニューを含む</label>
             </div>
+            <div>
+                <input type="checkbox" id="without_id" name="without_id" />
+                <label for="lunch">番号なしのメニューも含む</label>
+            </div>
             <br>
             <button id="generate">生成</button>
         </fieldset>
@@ -36,6 +40,7 @@
         <script>
         let menuData = [];
 
+        // JSON読み込み
         fetch("data.json")
         .then(res => res.json())
         .then(data => {
@@ -47,20 +52,24 @@
         const alcohol = document.getElementById('alcohol').checked;
         const duplicate = document.getElementById('duplicate').checked;
         const lunch = document.getElementById('lunch').checked;
+        const withoutId = document.getElementById('without_id').checked; // 🔹 新しい変数
 
         const resultDiv = document.getElementById('result');
         resultDiv.innerHTML = "<p>生成中...</p>";
 
         setTimeout(() => {
+            // 🔹 条件でフィルタリング
             let filtered = menuData.filter(item => {
             if (!alcohol && item.type === "alcohol") return false;
             if (!lunch && item.type === "lunch") return false;
+            if (!withoutId && (item.id === "none" || item.id === "")) return false; // idなし除外
             return true;
             });
 
-            const MAX_ITEMS = 30;
-            const MAX_TRY = 500000;
+            const MAX_ITEMS = 10;
+            const MAX_TRY = 10000;
 
+            // 🔹 ランダム組み合わせ生成
             function getRandomCombo() {
             let combo = [];
             let total = 0;
@@ -81,6 +90,7 @@
             let found = null;
             let best = null;
 
+            // 🔹 探索ループ
             for (let t = 0; t < MAX_TRY; t++) {
             const { combo, total } = getRandomCombo();
             if (combo.length === 0) continue;
@@ -109,6 +119,7 @@
             resultDiv.appendChild(warn);
             }
 
+            // 🔹 集計（同じ商品まとめ）
             let summary = {};
             target.combo.forEach(i => {
             if (!summary[i.id]) {
@@ -117,6 +128,7 @@
             summary[i.id].count++;
             });
 
+            // 🔹 表形式で表示
             const table = document.createElement("div");
             table.className = "menu-table";
 
@@ -128,7 +140,7 @@
 
             const idCell = document.createElement("div");
             idCell.className = "menu-cell";
-            idCell.textContent = item.id;
+            idCell.textContent = (item.id === "none" ? "" : item.id); // 空白で表示
 
             const nameCell = document.createElement("div");
             nameCell.className = "menu-cell name";

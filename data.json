@@ -636,25 +636,25 @@
         "type": "lunch"
     },
     {
-        "id": "none",
+        "id": "",
         "name": "ターメリックライス",
         "price": 150,
         "type": "normal"
     },
     {
-        "id": "none",
+        "id": "",
         "name": "ターメリックライスラージ",
         "price": 200,
         "type": "normal"
     },
     {
-        "id": "none",
+        "id": "",
         "name": "ターメリックライススモール",
         "price": 100,
         "type": "normal"
     },
     {
-        "id": "none",
+        "id": "",
         "name": "目玉焼き",
         "price": 50,
         "type": "normal"
