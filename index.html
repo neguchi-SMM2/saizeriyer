@@ -36,7 +36,6 @@
         <script>
         let menuData = [];
 
-        // JSON読み込み
         fetch("data.json")
         .then(res => res.json())
         .then(data => {
@@ -59,7 +58,7 @@
             return true;
             });
 
-            const MAX_ITEMS = 10;
+            const MAX_ITEMS = 20;
             const MAX_TRY = 10000;
 
             function getRandomCombo() {
@@ -110,7 +109,6 @@
             resultDiv.appendChild(warn);
             }
 
-            // 🔹 集計（同じ商品まとめ）
             let summary = {};
             target.combo.forEach(i => {
             if (!summary[i.id]) {
@@ -119,7 +117,6 @@
             summary[i.id].count++;
             });
 
-            // 🔹 表形式で表示
             const table = document.createElement("div");
             table.className = "menu-table";
 

@@ -34,7 +34,8 @@ input[type="checkbox"] {
   display: table;
   border-collapse: collapse;
   font-family: sans-serif;
-  font-size: 16px; /* 好きな大きさに調整 */
+  font-size: 16px;
+  margin: 0 auto;
 }
 
 .menu-row {
@@ -46,13 +47,16 @@ input[type="checkbox"] {
   padding: 4px 10px;
   border-bottom: 1px solid #ddd;
   white-space: nowrap;
+  text-align: center;
 }
 
 .menu-cell.name {
-  min-width: 200px; /* 商品名列は広めに */
+  min-width: 200px;
+  text-align: left;
 }
 
 .menu-total {
   margin-top: 8px;
   font-weight: bold;
+  text-align: center;
 }
