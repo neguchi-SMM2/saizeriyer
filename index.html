@@ -64,6 +64,7 @@
         const withoutId = document.getElementById('without_id').checked;
         const adultCount = parseInt(document.getElementById('adult').value, 10);
         const childCount = parseInt(document.getElementById('child').value, 10);
+        const peopleCount = adultCount + childCount;
 
         const resultDiv = document.getElementById('result');
         resultDiv.innerHTML = "<p>生成中...</p>";
@@ -72,14 +73,13 @@
             let filtered = menuData.filter(item => {
             if (!alcohol && item.type === "alcohol") return false;
             if (!lunch && item.type === "lunch") return false;
-            if (!withoutId && (item.id === "none" || item.id === "")) return false; // idなし除外
+            if (!withoutId && (item.id === "none" || item.id === "")) return false;
             return true;
             });
 
             const MAX_ITEMS = 50;
-            const MAX_TRY = 500000;
+            const MAX_TRY = 200000;
 
-            // 🔹 ランダム組み合わせ生成
             function getRandomCombo() {
             let combo = [];
             let total = 0;
@@ -87,7 +87,15 @@
 
             for (let j = 0; j < count; j++) {
                 const item = filtered[Math.floor(Math.random() * filtered.length)];
-                if (item.type === "lunch" && combo.some(c => c.type === "lunch")) continue;
+
+                if (item.type === "lunch") {
+                const currentLunches = combo.filter(c => c.type === "lunch");
+
+                if (currentLunches.length >= peopleCount) continue;
+
+                if (!duplicate && currentLunches.some(c => c.name === item.name)) continue;
+                }
+
                 if (!duplicate && combo.includes(item)) continue;
                 if (total + item.price > price) continue;
 
@@ -100,10 +108,11 @@
             let found = null;
             let best = null;
 
-            // 🔹 探索ループ
             for (let t = 0; t < MAX_TRY; t++) {
             const { combo, total } = getRandomCombo();
             if (combo.length === 0) continue;
+
+            if (!checkConstraints(combo, adultCount, childCount, peopleCount, duplicate)) continue;
 
             if (total > price - 100 && total <= price) {
                 found = { combo, total };
@@ -125,32 +134,37 @@
 
             if (!found) {
             const warn = document.createElement("p");
-            warn.textContent = "条件に合う組み合わせは見つかりませんでしたが、近い金額を表示します。";
+            warn.textContent =
+                "条件に合う組み合わせは見つかりませんでしたが、近い金額を表示します。";
             resultDiv.appendChild(warn);
             }
 
-            // 🔹 集計（同じ商品まとめ）
             let summary = {};
             target.combo.forEach(i => {
-            if (!summary[i.id]) {
-                summary[i.id] = { ...i, count: 0 };
+            if (!summary[i.id + i.name]) {
+                summary[i.id + i.name] = { ...i, count: 0 };
             }
-            summary[i.id].count++;
+            summary[i.id + i.name].count++;
             });
 
-            // 🔹 表形式で表示
+            summary = convertDrinkBars(summary);
+
+            summary = applyPenneLimit(summary);
+
             const table = document.createElement("div");
             table.className = "menu-table";
 
+            let totalSum = 0;
             Object.values(summary).forEach(item => {
             const subtotal = item.price * item.count;
+            totalSum += subtotal;
 
             const row = document.createElement("div");
             row.className = "menu-row";
 
             const idCell = document.createElement("div");
             idCell.className = "menu-cell";
-            idCell.textContent = (item.id === "none" ? "" : item.id); // 空白で表示
+            idCell.textContent = item.id === "none" ? "" : item.id;
 
             const nameCell = document.createElement("div");
             nameCell.className = "menu-cell name";
@@ -176,9 +190,82 @@
 
             const totalP = document.createElement("div");
             totalP.className = "menu-total";
-            totalP.textContent = `合計 : ${target.total}円`;
+            totalP.textContent = `合計 : ${totalSum}円`;
             resultDiv.appendChild(totalP);
         }, 50);
+
+        function checkConstraints(combo, adultCount, childCount, peopleCount, duplicate) {
+            let singleDrinks = combo.filter(i => i.id == 5103).length;
+            let setDrinks = combo.filter(i => i.id == 5101).length;
+            let kidsDrinks = combo.filter(i => i.id == 5102).length;
+            let lunchItems = combo.filter(i => i.type === "lunch");
+
+            if (singleDrinks + setDrinks > adultCount) return false;
+            if (kidsDrinks > childCount) return false;
+            if (lunchItems.length > peopleCount) return false;
+
+            if (!duplicate) {
+            let lunchNames = lunchItems.map(i => i.name);
+            let uniqueLunchNames = [...new Set(lunchNames)];
+            if (uniqueLunchNames.length < lunchNames.length) return false;
+            }
+
+            return true;
+        }
+
+        function convertDrinkBars(summary) {
+            const foodCount = Object.values(summary).reduce((acc, i) => {
+            if (typeof i.id === "number" && i.id >= 1100 && i.id <= 4399) {
+                return acc + i.count;
+            }
+            return acc;
+            }, 0);
+
+            let single = summary["5103単品ドリンクバー"]?.count || 0;
+
+            if (single > 0) {
+            let toConvert = Math.min(foodCount, single);
+
+            if (toConvert > 0) {
+                if (!summary["5101セットドリンクバー"]) {
+                summary["5101セットドリンクバー"] = {
+                    id: 5101,
+                    name: "セットドリンクバー",
+                    price: 200,
+                    count: 0,
+                };
+                }
+                summary["5101セットドリンクバー"].count += toConvert;
+                summary["5103単品ドリンクバー"].count -= toConvert;
+                if (summary["5103単品ドリンクバー"].count <= 0) {
+                delete summary["5103単品ドリンクバー"];
+                }
+            }
+            }
+            return summary;
+        }
+
+        function applyPenneLimit(summary) {
+            let penne = summary["noneペンネ変更"];
+            if (!penne) return summary;
+
+            let pastaCount = Object.values(summary).reduce((acc, i) => {
+            if (
+                typeof i.id === "number" &&
+                i.id >= 2300 &&
+                i.id < 2400 &&
+                i.id != 2325
+            ) {
+                return acc + i.count;
+            }
+            return acc;
+            }, 0);
+
+            if (penne.count > pastaCount) {
+            penne.count = pastaCount;
+            }
+            return summary;
+        }
         });
         </script>
     </body>
