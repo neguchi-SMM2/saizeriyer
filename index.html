@@ -155,7 +155,22 @@
             table.className = "menu-table";
 
             let totalSum = 0;
-            Object.values(summary).forEach(item => {
+            
+            // summaryをID順にソート（空白のidは最後）
+            const sortedItems = Object.values(summary).sort((a, b) => {
+                // 空白のidは最後に
+                if ((a.id === "" || a.id === "none") && (b.id !== "" && b.id !== "none")) return 1;
+                if ((b.id === "" || b.id === "none") && (a.id !== "" && a.id !== "none")) return -1;
+                if ((a.id === "" || a.id === "none") && (b.id === "" || b.id === "none")) return 0;
+                
+                // 数値IDの場合は数値として比較
+                const aId = typeof a.id === "number" ? a.id : parseInt(a.id);
+                const bId = typeof b.id === "number" ? b.id : parseInt(b.id);
+                
+                return aId - bId;
+            });
+            
+            sortedItems.forEach(item => {
             const subtotal = item.price * item.count;
             totalSum += subtotal;
 
