@@ -47,9 +47,9 @@
 
         <div id="result">ここに結果が表示されます。</div>
         <script>
+        //TTOも俺に作らせればよかったのにねぇ...あれ不便すぎるんだよ。特殊オーダーはできないし、ドリンクバーに関してもプログラムが自動で変換するようにすればいいものを。サイゼリヤ本社様、もっと便利なTTOを作ってください。本当に使いにくいです。 
         let menuData = [];
 
-        // JSON読み込み
         fetch("data.json")
         .then(res => res.json())
         .then(data => {
@@ -156,14 +156,11 @@
 
             let totalSum = 0;
             
-            // summaryをID順にソート（空白のidは最後）
             const sortedItems = Object.values(summary).sort((a, b) => {
-                // 空白のidは最後に
                 if ((a.id === "" || a.id === "none") && (b.id !== "" && b.id !== "none")) return 1;
                 if ((b.id === "" || b.id === "none") && (a.id !== "" && a.id !== "none")) return -1;
                 if ((a.id === "" || a.id === "none") && (b.id === "" || b.id === "none")) return 0;
                 
-                // 数値IDの場合は数値として比較
                 const aId = typeof a.id === "number" ? a.id : parseInt(a.id);
                 const bId = typeof b.id === "number" ? b.id : parseInt(b.id);
                 
@@ -229,16 +226,13 @@
         }
 
         function convertDrinkBars(summary) {
-            // フードアイテムの数をカウント（ID範囲: 1100-4399）
             const foodCount = Object.values(summary).reduce((acc, i) => {
-                // id が数値の場合のみチェック（空文字列やnoneは除外）
                 if (typeof i.id === "number" && i.id >= 1100 && i.id <= 4399) {
                     return acc + i.count;
                 }
                 return acc;
             }, 0);
 
-            // 単品ドリンクバーとセットドリンクバーのキーを動的に探す
             let singleDrinkKey = null;
             let singleDrinkCount = 0;
             let setDrinkKey = null;
@@ -254,12 +248,10 @@
                 }
             }
 
-            // 1. まず単品→セットへの変換（フードがある場合）
             if (singleDrinkCount > 0 && foodCount > 0) {
                 let canConvertToSet = Math.min(foodCount - setDrinkCount, singleDrinkCount);
                 
                 if (canConvertToSet > 0) {
-                    // セットドリンクバーが存在しない場合は新規作成
                     if (!setDrinkKey) {
                         setDrinkKey = "5101セットドリンクバー";
                         summary[setDrinkKey] = {
@@ -270,13 +262,11 @@
                         };
                     }
                     
-                    // 単品からセットに変換
                     summary[setDrinkKey].count += canConvertToSet;
                     summary[singleDrinkKey].count -= canConvertToSet;
                     setDrinkCount += canConvertToSet;
                     singleDrinkCount -= canConvertToSet;
                     
-                    // 単品ドリンクバーが0になったら削除
                     if (summary[singleDrinkKey].count <= 0) {
                         delete summary[singleDrinkKey];
                         singleDrinkKey = null;
@@ -285,11 +275,9 @@
                 }
             }
 
-            // 2. セット→単品への変換（セットがフード数を超えている場合）
             if (setDrinkCount > foodCount && setDrinkCount > 0) {
                 let excessSet = setDrinkCount - foodCount;
                 
-                // 単品ドリンクバーが存在しない場合は新規作成
                 if (!singleDrinkKey) {
                     singleDrinkKey = "5103単品ドリンクバー";
                     summary[singleDrinkKey] = {
@@ -300,11 +288,9 @@
                     };
                 }
                 
-                // セットから単品に変換
                 summary[singleDrinkKey].count += excessSet;
                 summary[setDrinkKey].count -= excessSet;
                 
-                // セットドリンクバーが0になったら削除
                 if (summary[setDrinkKey].count <= 0) {
                     delete summary[setDrinkKey];
                 }
@@ -314,11 +300,9 @@
         }
 
         function applyPenneLimit(summary) {
-            // ペンネ変更の正しいキーを探す（idが空文字列の場合）
             let penneKey = null;
             let penne = null;
             
-            // 可能性のあるキーを試す
             const possibleKeys = ["ペンネ変更", "noneペンネ変更", "ペンネ変更"];
             
             for (const key of possibleKeys) {
@@ -329,7 +313,6 @@
                 }
             }
             
-            // キーが見つからない場合、空文字列のidを持つペンネ変更を探す
             if (!penne) {
                 for (const [key, item] of Object.entries(summary)) {
                     if (item.name === "ペンネ変更" && (item.id === "" || item.id === "none")) {
@@ -342,7 +325,6 @@
             
             if (!penne) return summary;
 
-            // パスタの数をカウント（ID 2300-2399、但し2325は除く）
             let pastaCount = Object.values(summary).reduce((acc, i) => {
                 if (
                     typeof i.id === "number" &&
@@ -355,10 +337,8 @@
                 return acc;
             }, 0);
 
-            // ペンネ変更の数をパスタの数に制限
             if (penne.count > pastaCount) {
                 penne.count = pastaCount;
-                // 0になった場合は削除
                 if (penne.count <= 0) {
                     delete summary[penneKey];
                 }
