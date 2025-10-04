@@ -114,12 +114,6 @@
         "type": "normal"
     },
     {
-        "id": 1302,
-        "name": "冷たいパンプキンスープ",
-        "price": 180,
-        "type": "normal"
-    },
-    {
         "id": 1305,
         "name": "田舎風ミネストローネ",
         "price": 300,
@@ -294,8 +288,8 @@
         "type": "normal"
     },
     {
-        "id": 2417,
-        "name": "ラムのランプステーキ",
+        "id": "2417 or 2419",
+        "name": "ラムのランプステーキ or ビーフステーキ",
         "price": 1090,
         "type": "normal"
     },
@@ -392,6 +386,12 @@
     {
         "id": 3112,
         "name": "シナモンフォッカチオ",
+        "price": 200,
+        "type": "normal"
+    },
+    {
+        "id": 3113,
+        "name": "タラコフォッカチオ",
         "price": 200,
         "type": "normal"
     },
@@ -537,19 +537,24 @@
         "id": 4301,
         "name": "トッピング半熟卵",
         "price": 50,
-        "type": "alcohol"
+        "type": "normal"
     },
     {
         "id": 4304,
         "name": "トッピング野菜ソース",
         "price": 100,
-        "type": "alcohol"
+        "type": "normal"
     },
     {
         "id": 4307,
         "name": "トッピング粉チーズ",
         "price": 100,
-        "type": "alcohol"
+        "type": "normal"
+    },
+    {
+        "id": 4308,
+        "name": "やみつきスパイス",
+        "type": "normal"
     },
     {
         "id": 1116,
